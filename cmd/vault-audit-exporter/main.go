@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/hashicorp/vault/audit"
 	"github.com/praekeltfoundation/vault-audit-exporter"
 	"github.com/praekeltfoundation/vault-audit-exporter/version"
 	log "github.com/sirupsen/logrus"
@@ -16,13 +15,11 @@ var (
 	address string
 )
 
-func logRequests(c chan *audit.AuditRequestEntry) {
-	for req := range c {
+func logAuditEntries(queue *vaultAuditExporter.AuditEntryQueue) {
+	select {
+	case req := <-queue.ReceiveRequest():
 		log.WithFields(log.Fields{"entry": fmt.Sprintf("%+v", req)}).Info("Request")
-	}
-}
-func logResponses(c chan *audit.AuditResponseEntry) {
-	for res := range c {
+	case res := <-queue.ReceiveResponse():
 		log.WithFields(log.Fields{"entry": fmt.Sprintf("%+v", res)}).Info("Response")
 	}
 }
@@ -39,13 +36,12 @@ func main() {
 		return
 	}
 
-	reqChan := make(chan *audit.AuditRequestEntry)
-	resChan := make(chan *audit.AuditResponseEntry)
+	queue := vaultAuditExporter.NewAuditEntryQueue()
+	defer queue.Close()
 
-	go logRequests(reqChan)
-	go logResponses(resChan)
+	go logAuditEntries(queue)
 
-	if err := vaultAuditExporter.Listen(network, address, reqChan, resChan); err != nil {
+	if err := vaultAuditExporter.Listen(network, address, queue); err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error listening")
 		os.Exit(1)
 	}

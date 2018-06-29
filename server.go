@@ -9,12 +9,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type reqChan chan *audit.AuditRequestEntry
-type resChan chan *audit.AuditResponseEntry
-
 // Listen listens on the network and address specified and sends entries to
 // the AuditHandler instance.
-func Listen(network, address string, reqChan reqChan, resChan resChan) error {
+func Listen(network, address string, queue *AuditEntryQueue) error {
 	ln, err := net.Listen(network, address)
 	if err != nil {
 		return err
@@ -33,11 +30,11 @@ func Listen(network, address string, reqChan reqChan, resChan resChan) error {
 
 		log.WithFields(log.Fields{"remote_addr": conn.RemoteAddr()}).Info("Accepted connection")
 
-		go handleConnection(conn, reqChan, resChan)
+		go handleConnection(conn, queue)
 	}
 }
 
-func handleConnection(conn net.Conn, reqChan reqChan, resChan resChan) {
+func handleConnection(conn net.Conn, queue *AuditEntryQueue) {
 	defer closeConnection(conn)
 
 	scanner := bufio.NewScanner(conn)
@@ -55,10 +52,10 @@ func handleConnection(conn net.Conn, reqChan reqChan, resChan resChan) {
 
 		switch entryType {
 		case "request":
-			handleRequest(lineBytes, reqChan)
+			handleRequest(lineBytes, queue)
 
 		case "response":
-			handleResponse(lineBytes, resChan)
+			handleResponse(lineBytes, queue)
 
 		default:
 			log.WithFields(log.Fields{"type": entryType}).Warn("Received unknown audit entry type")
@@ -79,24 +76,24 @@ func getEntryType(lineBytes []byte) (entryType string, err error) {
 	return entry.Type, nil
 }
 
-func handleRequest(lineBytes []byte, reqChan reqChan) {
+func handleRequest(lineBytes []byte, queue *AuditEntryQueue) {
 	var req audit.AuditRequestEntry
 	if err := json.Unmarshal(lineBytes, &req); err != nil {
 		log.Error("Unable to unmarshal request audit entry")
 		return
 	}
 	log.WithFields(log.Fields{"request_id": req.Request.ID}).Debug("Received request audit entry")
-	reqChan <- &req
+	queue.sendRequest(&req)
 }
 
-func handleResponse(lineBytes []byte, resChan resChan) {
+func handleResponse(lineBytes []byte, queue *AuditEntryQueue) {
 	var res audit.AuditResponseEntry
 	if err := json.Unmarshal(lineBytes, &res); err != nil {
 		log.Error("Unable to unmarshal response audit entry")
 		return
 	}
 	log.WithFields(log.Fields{"request_id": res.Request.ID}).Debug("Received response audit entry")
-	resChan <- &res
+	queue.sendResponse(&res)
 }
 
 func closeConnection(conn net.Conn) {
