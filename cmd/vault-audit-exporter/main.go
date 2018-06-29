@@ -18,12 +18,12 @@ var (
 
 func logRequests(c chan *audit.AuditRequestEntry) {
 	for req := range c {
-		log.WithFields(log.Fields{"entry": req}).Info("Request")
+		log.WithFields(log.Fields{"entry": fmt.Sprintf("%+v", req)}).Info("Request")
 	}
 }
 func logResponses(c chan *audit.AuditResponseEntry) {
 	for res := range c {
-		log.WithFields(log.Fields{"entry": res}).Info("Response")
+		log.WithFields(log.Fields{"entry": fmt.Sprintf("%+v", res)}).Info("Response")
 	}
 }
 
