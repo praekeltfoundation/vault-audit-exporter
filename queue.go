@@ -4,7 +4,7 @@ import (
 	"github.com/hashicorp/vault/audit"
 )
 
-// AuditEntryQueue is a queue for audit entries.
+// AuditEntryQueue is a q for audit entries.
 type AuditEntryQueue struct {
 	reqChan chan *audit.AuditRequestEntry
 	resChan chan *audit.AuditResponseEntry
@@ -20,26 +20,26 @@ func NewAuditEntryQueue() *AuditEntryQueue {
 }
 
 // Close closes the underlying channels
-func (ah AuditEntryQueue) Close() {
-	close(ah.reqChan)
-	close(ah.resChan)
+func (q AuditEntryQueue) Close() {
+	close(q.reqChan)
+	close(q.resChan)
 }
 
 // ReceiveRequest returns a channel to receive AuditRequestEntry instances from.
-func (ah AuditEntryQueue) ReceiveRequest() <-chan *audit.AuditRequestEntry {
-	return ah.reqChan
+func (q AuditEntryQueue) ReceiveRequest() <-chan *audit.AuditRequestEntry {
+	return q.reqChan
 }
 
 // ReceiveResponse returns a channel to receive AuditResponseEntry instances
 // from.
-func (ah AuditEntryQueue) ReceiveResponse() <-chan *audit.AuditResponseEntry {
-	return ah.resChan
+func (q AuditEntryQueue) ReceiveResponse() <-chan *audit.AuditResponseEntry {
+	return q.resChan
 }
 
-func (ah AuditEntryQueue) sendRequest(req *audit.AuditRequestEntry) {
-	ah.reqChan <- req
+func (q AuditEntryQueue) sendRequest(req *audit.AuditRequestEntry) {
+	q.reqChan <- req
 }
 
-func (ah AuditEntryQueue) sendResponse(res *audit.AuditResponseEntry) {
-	ah.resChan <- res
+func (q AuditEntryQueue) sendResponse(res *audit.AuditResponseEntry) {
+	q.resChan <- res
 }
