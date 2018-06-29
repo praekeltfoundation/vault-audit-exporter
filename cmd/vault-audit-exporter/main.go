@@ -16,12 +16,15 @@ var (
 	address string
 )
 
-type logHandler struct {}
-func (lh logHandler) HandleRequest(req *audit.AuditRequestEntry) {
-	log.WithFields(log.Fields{"entry": req}).Info("Request")
+func logRequests(c chan *audit.AuditRequestEntry) {
+	for req := range c {
+		log.WithFields(log.Fields{"entry": req}).Info("Request")
+	}
 }
-func (lh logHandler) HandleResponse(res *audit.AuditResponseEntry) {
-	log.WithFields(log.Fields{"entry": res}).Info("Response")
+func logResponses(c chan *audit.AuditResponseEntry) {
+	for res := range c {
+		log.WithFields(log.Fields{"entry": res}).Info("Response")
+	}
 }
 
 func main() {
@@ -36,8 +39,13 @@ func main() {
 		return
 	}
 
-	var handler logHandler
-	if err := vaultAuditExporter.Listen(network, address, &handler); err != nil {
+	reqChan := make(chan *audit.AuditRequestEntry)
+	resChan := make(chan *audit.AuditResponseEntry)
+
+	go logRequests(reqChan)
+	go logResponses(resChan)
+
+	if err := vaultAuditExporter.Listen(network, address, reqChan, resChan); err != nil {
 		log.WithFields(log.Fields{"err": err}).Error("Error listening")
 		os.Exit(1)
 	}
