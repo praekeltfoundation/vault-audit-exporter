@@ -16,10 +16,10 @@ before_install:
   - gometalinter --install
 
 install:
-  - make get-deps
+  - make dep
 
 script:
-  - make test
+  - make cover
   - make lint
 
 after_success:
