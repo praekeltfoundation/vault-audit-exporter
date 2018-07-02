@@ -48,3 +48,11 @@ func (ts *TestSuite) TestSendResponse() {
 	resReceived := <-q.ReceiveResponse()
 	ts.Equal(res, resReceived)
 }
+
+func (ts *TestSuite) TestDone() {
+	q := NewAuditEntryQueue()
+
+	q.Close()
+
+	ts.NotNil(<-q.Done())
+}
