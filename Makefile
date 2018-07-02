@@ -57,7 +57,7 @@ fmt:
 	go fmt ./...
 
 fmt-ci: fmt
-	@find $(shell go list -f '{{.Dir}}' ./...) -name '*.go' -depth 1 \
+	@find $(shell go list -f '{{.Dir}}' ./...) -depth 1 -name '*.go' \
 		| xargs git diff --exit-code --
 
 .PHONY: all build clean cover default dep dep-ci fmt fmt-ci help lint test
