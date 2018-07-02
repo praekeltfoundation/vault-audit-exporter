@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 
 	"github.com/praekeltfoundation/vault-audit-exporter"
 	"github.com/praekeltfoundation/vault-audit-exporter/version"
@@ -42,7 +41,6 @@ func main() {
 	go logAuditEntries(queue)
 
 	if err := vaultAuditExporter.Listen(network, address, queue); err != nil {
-		log.WithFields(log.Fields{"err": err}).Error("Error listening")
-		os.Exit(1)
+		log.Fatal("Error listening for connections", err)
 	}
 }

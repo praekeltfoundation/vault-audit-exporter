@@ -98,7 +98,7 @@ func handleResponse(lineBytes []byte, queue *AuditEntryQueue) {
 
 func closeConnection(conn net.Conn) {
 	if err := conn.Close(); err != nil {
-		log.Warn("Connection not closed cleanly")
+		log.Warn("Connection not closed cleanly", err)
 	}
 	log.WithFields(log.Fields{"remote_addr": conn.RemoteAddr()}).Info("Closed connection")
 }
