@@ -21,7 +21,7 @@ func logAuditEntries(queue *vaultAuditExporter.AuditEntryQueue) {
 			log.Infof("Request: %+v", req)
 		case res := <-queue.ReceiveResponse():
 			log.Infof("Response: %+v", res)
-		case <- queue.Done():
+		case <-queue.Done():
 			log.Warn("Audit entry queue closed")
 			return
 		}

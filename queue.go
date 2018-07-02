@@ -6,8 +6,8 @@ import (
 
 // AuditEntryQueue is a q for audit entries.
 type AuditEntryQueue struct {
-	reqChan chan *audit.AuditRequestEntry
-	resChan chan *audit.AuditResponseEntry
+	reqChan  chan *audit.AuditRequestEntry
+	resChan  chan *audit.AuditResponseEntry
 	doneChan chan struct{}
 }
 
@@ -15,8 +15,8 @@ type AuditEntryQueue struct {
 // TODO: Add buffer size, send timeout, dropping on error?
 func NewAuditEntryQueue() *AuditEntryQueue {
 	return &AuditEntryQueue{
-		reqChan: make(chan *audit.AuditRequestEntry),
-		resChan: make(chan *audit.AuditResponseEntry),
+		reqChan:  make(chan *audit.AuditRequestEntry),
+		resChan:  make(chan *audit.AuditResponseEntry),
 		doneChan: make(chan struct{}, 1),
 	}
 }
