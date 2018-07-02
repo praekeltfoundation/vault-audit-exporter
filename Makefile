@@ -19,6 +19,9 @@ help:
 	@echo '    make clean           Clean the directory tree.'
 	@echo '    make cover           Run tests and collect coverage data.'
 	@echo '    make dep             Run dep ensure.'
+	@echo '    make dep-ci          Run dep ensure and check for any changes.'
+	@echo '    make fmt             Run gofmt on all project packages.'
+	@echo '    make fmt-ci          Run gofmt and check for any changes.'
 	@echo '    make lint            Run gometalinter.'
 	@echo '    make test            Run tests on a compiled project.'
 	@echo
@@ -35,6 +38,9 @@ build:
 dep:
 	dep ensure -v
 
+dep-ci: dep
+	@git diff --exit-code -- Gopkg.lock
+
 clean:
 	@test ! -e bin/${BIN_NAME} || rm bin/${BIN_NAME}
 
@@ -47,4 +53,11 @@ cover:
 lint:
 	gometalinter --vendor --tests --deadline=120s ./...
 
-.PHONY: all build clean cover default dep help lint test
+fmt:
+	go fmt ./...
+
+fmt-ci: fmt
+	@find $(shell go list -f '{{.Dir}}' ./...) -name '*.go' -depth 1 \
+		| xargs git diff --exit-code --
+
+.PHONY: all build clean cover default dep dep-ci fmt fmt-ci help lint test

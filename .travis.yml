@@ -16,11 +16,12 @@ before_install:
   - gometalinter --install
 
 install:
-  - make dep
+  - make dep-ci
 
 script:
   - make cover
   - make lint
+  - make fmt-ci
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
