@@ -15,11 +15,13 @@ var (
 )
 
 func logAuditEntries(queue *vaultAuditExporter.AuditEntryQueue) {
-	select {
-	case req := <-queue.ReceiveRequest():
-		log.WithFields(log.Fields{"entry": fmt.Sprintf("%+v", req)}).Info("Request")
-	case res := <-queue.ReceiveResponse():
-		log.WithFields(log.Fields{"entry": fmt.Sprintf("%+v", res)}).Info("Response")
+	for {
+		select {
+		case req := <-queue.ReceiveRequest():
+			log.Infof("Request: %+v", req)
+		case res := <-queue.ReceiveResponse():
+			log.Infof("Response: %+v", res)
+		}
 	}
 }
 
