@@ -40,6 +40,7 @@ func (q AuditEntryQueue) ReceiveResponse() <-chan *audit.AuditResponseEntry {
 	return q.resChan
 }
 
+// Done receives a message when the queue is closed.
 func (q AuditEntryQueue) Done() <-chan struct{} {
 	return q.doneChan
 }
