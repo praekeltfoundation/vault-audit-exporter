@@ -32,8 +32,9 @@ func (ts *TestSuite) TestSendRequest() {
 		q.sendRequest(req)
 	}()
 
-	reqReceived := <-q.ReceiveRequest()
-	ts.Equal(req, reqReceived)
+	entry := <-q.Receive()
+	ts.IsType(&audit.AuditRequestEntry{}, entry)
+	ts.Equal(req, entry)
 }
 
 func (ts *TestSuite) TestSendResponse() {
@@ -45,14 +46,26 @@ func (ts *TestSuite) TestSendResponse() {
 		q.sendResponse(res)
 	}()
 
-	resReceived := <-q.ReceiveResponse()
-	ts.Equal(res, resReceived)
+	entry := <-q.Receive()
+	ts.IsType(&audit.AuditResponseEntry{}, entry)
+	ts.Equal(res, entry)
 }
 
-func (ts *TestSuite) TestDone() {
+func (ts *TestSuite) TestClose() {
 	q := NewAuditEntryQueue()
 
-	q.Close()
+	req := dummyRequest()
+	res := dummyResponse()
+	go func() {
+		q.sendRequest(req)
+		q.sendResponse(res)
+		q.Close()
+	}()
 
-	ts.NotNil(<-q.Done())
+	var entries []interface{}
+	for entry := range q.Receive() {
+		entries = append(entries, entry)
+	}
+
+	ts.Equal([]interface{}{req, res}, entries)
 }

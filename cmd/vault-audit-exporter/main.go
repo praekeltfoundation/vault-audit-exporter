@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 
+	"github.com/hashicorp/vault/audit"
 	"github.com/praekeltfoundation/vault-audit-exporter"
 	"github.com/praekeltfoundation/vault-audit-exporter/version"
 	log "github.com/sirupsen/logrus"
@@ -15,15 +16,14 @@ var (
 )
 
 func logAuditEntries(queue *vaultAuditExporter.AuditEntryQueue) {
-	for {
-		select {
-		case req := <-queue.ReceiveRequest():
-			log.Infof("Request: %+v", req)
-		case res := <-queue.ReceiveResponse():
-			log.Infof("Response: %+v", res)
-		case <-queue.Done():
-			log.Warn("Audit entry queue closed")
-			return
+	for entry := range queue.Receive() {
+		switch entry.(type) {
+		case *audit.AuditRequestEntry:
+			log.Infof("Request: %+v", entry)
+		case *audit.AuditResponseEntry:
+			log.Infof("Response: %+v", entry)
+		default:
+			log.Warn("Unknown audit entry type")
 		}
 	}
 }

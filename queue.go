@@ -6,49 +6,29 @@ import (
 
 // AuditEntryQueue is a q for audit entries.
 type AuditEntryQueue struct {
-	reqChan  chan *audit.AuditRequestEntry
-	resChan  chan *audit.AuditResponseEntry
-	doneChan chan struct{}
+	channel chan interface{}
 }
 
 // NewAuditEntryQueue creates an new AuditEntryQueue
 // TODO: Add buffer size, send timeout, dropping on error?
 func NewAuditEntryQueue() *AuditEntryQueue {
-	return &AuditEntryQueue{
-		reqChan:  make(chan *audit.AuditRequestEntry),
-		resChan:  make(chan *audit.AuditResponseEntry),
-		doneChan: make(chan struct{}, 1),
-	}
+	return &AuditEntryQueue{channel: make(chan interface{})}
 }
 
 // Close closes the underlying channels
 func (q AuditEntryQueue) Close() {
-	q.doneChan <- struct{}{}
-	close(q.reqChan)
-	close(q.resChan)
-	close(q.doneChan)
+	close(q.channel)
 }
 
-// ReceiveRequest returns a channel to receive AuditRequestEntry instances from.
-func (q AuditEntryQueue) ReceiveRequest() <-chan *audit.AuditRequestEntry {
-	return q.reqChan
-}
-
-// ReceiveResponse returns a channel to receive AuditResponseEntry instances
-// from.
-func (q AuditEntryQueue) ReceiveResponse() <-chan *audit.AuditResponseEntry {
-	return q.resChan
-}
-
-// Done receives a message when the queue is closed.
-func (q AuditEntryQueue) Done() <-chan struct{} {
-	return q.doneChan
+// Receive returns a channel to receive AuditEntry instances from.
+func (q AuditEntryQueue) Receive() <-chan interface{} {
+	return q.channel
 }
 
 func (q AuditEntryQueue) sendRequest(req *audit.AuditRequestEntry) {
-	q.reqChan <- req
+	q.channel <- req
 }
 
 func (q AuditEntryQueue) sendResponse(res *audit.AuditResponseEntry) {
-	q.resChan <- res
+	q.channel <- res
 }
