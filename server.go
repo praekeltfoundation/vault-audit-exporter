@@ -9,8 +9,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Listen listens on the network and address specified and sends entries to
-// the AuditHandler instance.
+// Listen listens on the network and address specified.
 func Listen(network, address string) (net.Listener, error) {
 	listener, err := net.Listen(network, address)
 	if err != nil {
