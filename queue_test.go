@@ -1,4 +1,4 @@
-package vaultAuditExporter
+package auditexporter
 
 func (ts *TestSuite) TestSendRequest() {
 	q := NewAuditEntryQueue()
@@ -35,7 +35,7 @@ func (ts *TestSuite) TestClose() {
 		q.Close()
 	}()
 
-	var entries []interface{}
+	var entries []interface{} // nolint[prealloc]
 	for entry := range q.Receive() {
 		entries = append(entries, entry)
 	}

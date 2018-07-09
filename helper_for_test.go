@@ -1,4 +1,4 @@
-package vaultAuditExporter
+package auditexporter
 
 import (
 	"testing"

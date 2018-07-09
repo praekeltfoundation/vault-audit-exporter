@@ -1,7 +1,8 @@
-package vaultAuditExporter
+package auditexporter
 
 import (
 	"encoding/json"
+	"io"
 	"net"
 )
 
@@ -17,11 +18,11 @@ func setupHander(ts *TestSuite) (net.Conn, *AuditEntryQueue) {
 	return server, queue
 }
 
-func writeJSONLine(ts *TestSuite, v interface{}, conn net.Conn) {
+func writeJSONLine(ts *TestSuite, v interface{}, writer io.Writer) {
 	b, _ := ts.WithoutError(json.Marshal(v)).([]byte)
 
-	ts.WithoutError(conn.Write(b))
-	ts.WithoutError(conn.Write([]byte("\n")))
+	ts.WithoutError(writer.Write(b))
+	ts.WithoutError(writer.Write([]byte("\n")))
 }
 
 func (ts *TestSuite) TestHandleRequest() {

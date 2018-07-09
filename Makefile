@@ -22,7 +22,7 @@ help:
 	@echo '    make dep-ci          Run dep ensure and check for any changes.'
 	@echo '    make fmt             Run gofmt on all project packages.'
 	@echo '    make fmt-ci          Run gofmt and check for any changes.'
-	@echo '    make lint            Run gometalinter.'
+	@echo '    make lint            Run golangci-lint.'
 	@echo '    make test            Run tests on a compiled project.'
 	@echo
 
@@ -51,7 +51,7 @@ cover:
 	go test -race -coverprofile=coverage.txt -covermode=atomic ${NON_CMD_PACKAGES}
 
 lint:
-	gometalinter --vendor --tests --deadline=120s ./...
+	golangci-lint run --enable-all --tests ./...
 
 fmt:
 	go fmt ./...

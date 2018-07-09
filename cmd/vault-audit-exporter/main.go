@@ -15,7 +15,7 @@ var (
 	address string
 )
 
-func logAuditEntries(queue *vaultAuditExporter.AuditEntryQueue) {
+func logAuditEntries(queue *auditexporter.AuditEntryQueue) {
 	for entry := range queue.Receive() {
 		switch entry.(type) {
 		case *audit.AuditRequestEntry:
@@ -40,7 +40,7 @@ func main() {
 		return
 	}
 
-	listener, err := vaultAuditExporter.Listen(network, address)
+	listener, err := auditexporter.Listen(network, address)
 	if err != nil {
 		log.Fatal("Error listening for connections", err)
 	}
@@ -51,11 +51,11 @@ func main() {
 		}
 	}()
 
-	queue := vaultAuditExporter.NewAuditEntryQueue()
+	queue := auditexporter.NewAuditEntryQueue()
 	defer queue.Close()
 	go logAuditEntries(queue)
 
-	if err := vaultAuditExporter.AcceptConnections(listener, queue); err != nil {
+	if err := auditexporter.AcceptConnections(listener, queue); err != nil {
 		log.Fatal("Error accepting connections", err)
 	}
 }
