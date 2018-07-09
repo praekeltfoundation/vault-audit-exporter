@@ -5,8 +5,9 @@ go:
   - master
 
 env:
-  - DEP_VERSION="v0.4.1"
-  - GOLANGCI_LINT_VERSION="v1.9.1"
+  global:
+    - DEP_VERSION="v0.4.1"
+    - GOLANGCI_LINT_VERSION="v1.9.1"
 
 before_install:
   # Install dep as per https://golang.github.io/dep/docs/FAQ.html#how-do-i-use-dep-in-ci
