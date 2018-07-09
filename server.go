@@ -11,19 +11,20 @@ import (
 
 // Listen listens on the network and address specified and sends entries to
 // the AuditHandler instance.
-func Listen(network, address string, queue *AuditEntryQueue) error {
-	ln, err := net.Listen(network, address)
+func Listen(network, address string) (net.Listener, error) {
+	listener, err := net.Listen(network, address)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	log.WithFields(log.Fields{
-		"network": network,
-		"address": address,
-	}).Info("Listening...")
+	log.WithFields(log.Fields{"addr": listener.Addr()}).Info("Listening...")
 
+	return listener, nil
+}
+
+func AcceptConnections(listener net.Listener, queue *AuditEntryQueue) error {
 	for {
-		conn, err := ln.Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			return err
 		}

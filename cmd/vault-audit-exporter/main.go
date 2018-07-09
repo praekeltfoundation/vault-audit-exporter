@@ -40,12 +40,17 @@ func main() {
 		return
 	}
 
+	listener, err := vaultAuditExporter.Listen(network, address)
+	defer listener.Close()
+	if err != nil {
+		log.Fatal("Error listening for connections", err)
+	}
+
 	queue := vaultAuditExporter.NewAuditEntryQueue()
 	defer queue.Close()
-
 	go logAuditEntries(queue)
 
-	if err := vaultAuditExporter.Listen(network, address, queue); err != nil {
-		log.Fatal("Error listening for connections", err)
+	if err := vaultAuditExporter.AcceptConnections(listener, queue); err != nil {
+		log.Fatal("Error accepting connections", err)
 	}
 }
