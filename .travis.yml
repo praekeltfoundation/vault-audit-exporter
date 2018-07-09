@@ -1,0 +1,29 @@
+language: go
+
+go:
+  - 1.10.x
+  - master
+
+env:
+  global:
+    - DEP_VERSION="v0.4.1"
+    - GOLANGCI_LINT_VERSION="v1.9.1"
+
+before_install:
+  # Install dep as per https://golang.github.io/dep/docs/FAQ.html#how-do-i-use-dep-in-ci
+  - curl -fsL https://github.com/golang/dep/releases/download/${DEP_VERSION}/dep-linux-amd64 -o $GOPATH/bin/dep
+  - chmod +x $GOPATH/bin/dep
+   # Install golangci-lint
+  - curl -fsL https://install.goreleaser.com/github.com/golangci/golangci-lint.sh | bash -s -- -b $GOPATH/bin "$GOLANGCI_LINT_VERSION"
+
+install:
+  - make dep-ci
+
+script:
+  - make cover
+  # Don't lint on go master -- the build is slow enough already.
+  - go version | grep 'devel' || make lint
+  - make fmt-ci
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
