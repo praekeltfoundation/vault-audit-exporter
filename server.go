@@ -70,7 +70,7 @@ type auditEntry struct {
 	Type string `json:"type"`
 }
 
-func getEntryType(lineBytes []byte) (entryType string, err error) {
+func getEntryType(lineBytes []byte) (string, error) {
 	var entry auditEntry
 	err := json.Unmarshal(lineBytes, &entry)
 	return entry.Type, err
