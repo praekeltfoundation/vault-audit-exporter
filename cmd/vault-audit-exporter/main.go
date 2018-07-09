@@ -41,10 +41,15 @@ func main() {
 	}
 
 	listener, err := vaultAuditExporter.Listen(network, address)
-	defer listener.Close()
 	if err != nil {
 		log.Fatal("Error listening for connections", err)
 	}
+	defer func() {
+		err := listener.Close()
+		if err != nil {
+			log.Warn("Error closing listener", err)
+		}
+	}()
 
 	queue := vaultAuditExporter.NewAuditEntryQueue()
 	defer queue.Close()

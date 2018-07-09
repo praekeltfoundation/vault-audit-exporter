@@ -3,6 +3,8 @@ package vaultAuditExporter
 import (
 	"testing"
 
+	"github.com/hashicorp/vault/audit"
+	"github.com/satori/go.uuid"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -34,5 +36,33 @@ func (ts *TestSuite) SetupTest() {
 func (ts *TestSuite) TearDownTest() {
 	for _, f := range ts.cleanups {
 		f()
+	}
+}
+
+// WithoutError accepts a (result, error) pair, immediately fails the test if
+// there is an error, and returns just the result if there is no error. It
+// accepts and returns the result value as an `interface{}`, so it may need to
+// be cast back to whatever type it should be afterwards.
+func (ts *TestSuite) WithoutError(result interface{}, err error) interface{} {
+	ts.T().Helper()
+	ts.Require().NoError(err)
+	return result
+}
+
+func dummyRequest() *audit.AuditRequestEntry {
+	return &audit.AuditRequestEntry{
+		Type: "request",
+		Request: audit.AuditRequest{
+			ID: uuid.NewV4().String(),
+		},
+	}
+}
+
+func dummyResponse() *audit.AuditResponseEntry {
+	return &audit.AuditResponseEntry{
+		Type: "response",
+		Request: audit.AuditRequest{
+			ID: uuid.NewV4().String(),
+		},
 	}
 }

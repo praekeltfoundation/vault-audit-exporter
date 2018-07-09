@@ -22,6 +22,7 @@ func Listen(network, address string) (net.Listener, error) {
 	return listener, nil
 }
 
+// AcceptConnections loops forever accepting and handling connections
 func AcceptConnections(listener net.Listener, queue *AuditEntryQueue) error {
 	for {
 		conn, err := listener.Accept()

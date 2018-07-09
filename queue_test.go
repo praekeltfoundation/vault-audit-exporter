@@ -1,28 +1,5 @@
 package vaultAuditExporter
 
-import (
-	"github.com/hashicorp/vault/audit"
-	"github.com/satori/go.uuid"
-)
-
-func dummyRequest() *audit.AuditRequestEntry {
-	return &audit.AuditRequestEntry{
-		Type: "request",
-		Request: audit.AuditRequest{
-			ID: uuid.NewV4().String(),
-		},
-	}
-}
-
-func dummyResponse() *audit.AuditResponseEntry {
-	return &audit.AuditResponseEntry{
-		Type: "response",
-		Request: audit.AuditRequest{
-			ID: uuid.NewV4().String(),
-		},
-	}
-}
-
 func (ts *TestSuite) TestSendRequest() {
 	q := NewAuditEntryQueue()
 	ts.AddCleanup(q.Close)
@@ -32,9 +9,7 @@ func (ts *TestSuite) TestSendRequest() {
 		q.sendRequest(req)
 	}()
 
-	entry := <-q.Receive()
-	ts.IsType(&audit.AuditRequestEntry{}, entry)
-	ts.Equal(req, entry)
+	ts.Equal(req, <-q.Receive())
 }
 
 func (ts *TestSuite) TestSendResponse() {
@@ -46,9 +21,7 @@ func (ts *TestSuite) TestSendResponse() {
 		q.sendResponse(res)
 	}()
 
-	entry := <-q.Receive()
-	ts.IsType(&audit.AuditResponseEntry{}, entry)
-	ts.Equal(res, entry)
+	ts.Equal(res, <-q.Receive())
 }
 
 func (ts *TestSuite) TestClose() {
