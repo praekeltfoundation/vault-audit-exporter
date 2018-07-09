@@ -72,10 +72,8 @@ type auditEntry struct {
 
 func getEntryType(lineBytes []byte) (entryType string, err error) {
 	var entry auditEntry
-	if err := json.Unmarshal(lineBytes, &entry); err != nil {
-		return "", err
-	}
-	return entry.Type, nil
+	err := json.Unmarshal(lineBytes, &entry)
+	return entry.Type, err
 }
 
 func handleRequest(lineBytes []byte, queue *AuditEntryQueue) {
