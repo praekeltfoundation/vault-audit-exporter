@@ -9,40 +9,23 @@ import (
 )
 
 type auditEntryCollector struct {
-	requests  chan *audit.AuditRequestEntry
-	responses chan *audit.AuditResponseEntry
+	requests  []*audit.AuditRequestEntry
+	responses []*audit.AuditResponseEntry
 }
 
 func newAuditEntryCollector() *auditEntryCollector {
 	return &auditEntryCollector{
-		requests:  make(chan *audit.AuditRequestEntry),
-		responses: make(chan *audit.AuditResponseEntry),
+		requests:  make([]*audit.AuditRequestEntry, 0),
+		responses: make([]*audit.AuditResponseEntry, 0),
 	}
 }
 
 func (col *auditEntryCollector) HandleRequest(req *audit.AuditRequestEntry) {
-	col.requests <- req
+	col.requests = append(col.requests, req)
 }
 
 func (col *auditEntryCollector) HandleResponse(res *audit.AuditResponseEntry) {
-	col.responses <- res
-}
-
-func (col *auditEntryCollector) close() {
-	close(col.requests)
-	close(col.responses)
-}
-
-func setupHander(ts *TestSuite) (net.Conn, *auditEntryCollector) {
-	server, client := net.Pipe()
-	ts.AddCleanup(func() { ts.Nil(server.Close()) })
-
-	collector := newAuditEntryCollector()
-	ts.AddCleanup(collector.close)
-
-	go handleConnection(client, collector)
-
-	return server, collector
+	col.responses = append(col.responses, res)
 }
 
 func writeJSONLine(ts *TestSuite, v interface{}, writer io.Writer) {
@@ -53,19 +36,33 @@ func writeJSONLine(ts *TestSuite, v interface{}, writer io.Writer) {
 }
 
 func (ts *TestSuite) TestHandleRequest() {
-	server, collector := setupHander(ts)
+	server, client := net.Pipe()
 
 	req := dummyRequest()
-	writeJSONLine(ts, req, server)
+	go func() {
+		writeJSONLine(ts, req, server)
+		server.Close()
+	}()
 
-	ts.Equal(req, <-collector.requests)
+	collector := newAuditEntryCollector()
+	handleConnection(client, collector)
+
+	ts.Len(collector.requests, 1)
+	ts.Equal(req, collector.requests[0])
 }
 
 func (ts *TestSuite) TestHandleResponse() {
-	server, collector := setupHander(ts)
+	server, client := net.Pipe()
 
 	res := dummyResponse()
-	writeJSONLine(ts, res, server)
+	go func() {
+		writeJSONLine(ts, res, server)
+		server.Close()
+	}()
 
-	ts.Equal(res, <-collector.responses)
+	collector := newAuditEntryCollector()
+	handleConnection(client, collector)
+
+	ts.Len(collector.responses, 1)
+	ts.Equal(res, collector.responses[0])
 }
