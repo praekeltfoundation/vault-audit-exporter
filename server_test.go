@@ -124,3 +124,33 @@ func (ts *TestSuite) TestInvalidJSON() {
 	ts.Empty(collector.requests)
 	ts.Empty(collector.responses)
 }
+
+func (ts *TestSuite) TestServe() {
+	listener, _ := ts.WithoutError(net.Listen("tcp", "127.0.0.1:0")).(net.Listener)
+	ts.AddCleanup(func() { _ = listener.Close() })
+
+	// We have to use the queue here because handling happens in a separate
+	// goroutine
+	queue := NewAuditEntryQueue()
+	ts.AddCleanup(queue.Close)
+
+	// Start serving
+	go Serve(listener, queue)
+
+	// Dial into the server
+	addr := listener.Addr()
+	conn, _ := ts.WithoutError(net.Dial(addr.Network(), addr.String())).(net.Conn)
+
+	// Send some entries
+	req := dummyRequest()
+	res := dummyResponse()
+	go func() {
+		defer conn.Close()
+		writeJSONLine(req, conn)
+		writeJSONLine(res, conn)
+	}()
+
+	// Ensure they are received in the queue
+	ts.Equal(req, <-queue.Receive())
+	ts.Equal(res, <-queue.Receive())
+}
