@@ -135,7 +135,9 @@ func (ts *TestSuite) TestServe() {
 	ts.AddCleanup(queue.Close)
 
 	// Start serving
-	go Serve(listener, queue)
+	go func() {
+		_ = Serve(listener, queue)
+	}()
 
 	// Dial into the server
 	addr := listener.Addr()
