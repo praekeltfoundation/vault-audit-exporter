@@ -33,24 +33,16 @@ func Serve(listener net.Listener, handler Handler) error {
 	// net/http Server also closes the listener in Serve
 	defer closeListener(listener)
 
-	var tempDelay time.Duration // how long to sleep on accept failure
-
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			// This logic copied from the stdlib net/http server:
+			// This logic is inspired by the stdlib net/http server:
 			// https://go.googlesource.com/go/+/go1.10.3/src/net/http/server.go#2777
 			if ne, ok := err.(net.Error); ok && ne.Temporary() {
-				if tempDelay == 0 {
-					tempDelay = 5 * time.Millisecond
-				} else {
-					tempDelay *= 2
-				}
-				if max := 1 * time.Second; tempDelay > max {
-					tempDelay = max
-				}
-				log.Warnf("Accept error: %v; retrying in %v", err, tempDelay)
-				time.Sleep(tempDelay)
+				// net/http does a fancy exponential backoff... we just do a constant
+				// time for simplicity.
+				log.Warnf("Accept error: %v; retrying in 100ms", err)
+				time.Sleep(100 * time.Millisecond)
 				continue
 			}
 			return err
