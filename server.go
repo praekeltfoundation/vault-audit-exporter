@@ -49,7 +49,7 @@ func Serve(listener net.Listener, handler Handler) error {
 				if max := 1 * time.Second; tempDelay > max {
 					tempDelay = max
 				}
-				log.Warn("Accept error: %v; retrying in %v", err, tempDelay)
+				log.Warnf("Accept error: %v; retrying in %v", err, tempDelay)
 				time.Sleep(tempDelay)
 				continue
 			}
