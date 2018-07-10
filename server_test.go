@@ -91,3 +91,33 @@ func (ts *TestSuite) TestUnknownTypeIgnored() {
 	ts.Len(collector.responses, 1)
 	ts.Equal(res, collector.responses[0])
 }
+
+func (ts *TestSuite) TestUnknownJSON() {
+	server, client := net.Pipe()
+	defer server.Close()
+
+	go func() {
+		writeLine(ts, "{\"foo\": \"bar\"}", server)
+	}()
+
+	collector := newAuditEntryCollector()
+	handleConnection(client, collector)
+
+	ts.Empty(collector.requests)
+	ts.Empty(collector.responses)
+}
+
+func (ts *TestSuite) TestInvalidJSON() {
+	server, client := net.Pipe()
+	defer server.Close()
+
+	go func() {
+		writeLine(ts, "baz", server)
+	}()
+
+	collector := newAuditEntryCollector()
+	handleConnection(client, collector)
+
+	ts.Empty(collector.requests)
+	ts.Empty(collector.responses)
+}
