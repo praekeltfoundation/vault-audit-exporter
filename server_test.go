@@ -4,18 +4,45 @@ import (
 	"encoding/json"
 	"io"
 	"net"
+
+	"github.com/hashicorp/vault/audit"
 )
 
-func setupHander(ts *TestSuite) (net.Conn, *AuditEntryQueue) {
+type auditEntryCollector struct {
+	requests  chan *audit.AuditRequestEntry
+	responses chan *audit.AuditResponseEntry
+}
+
+func newAuditEntryCollector() *auditEntryCollector {
+	return &auditEntryCollector{
+		requests:  make(chan *audit.AuditRequestEntry),
+		responses: make(chan *audit.AuditResponseEntry),
+	}
+}
+
+func (col *auditEntryCollector) HandleRequest(req *audit.AuditRequestEntry) {
+	col.requests <- req
+}
+
+func (col *auditEntryCollector) HandleResponse(res *audit.AuditResponseEntry) {
+	col.responses <- res
+}
+
+func (col *auditEntryCollector) close() {
+	close(col.requests)
+	close(col.responses)
+}
+
+func setupHander(ts *TestSuite) (net.Conn, *auditEntryCollector) {
 	server, client := net.Pipe()
 	ts.AddCleanup(func() { ts.Nil(server.Close()) })
 
-	queue := NewAuditEntryQueue()
-	ts.AddCleanup(queue.Close)
+	collector := newAuditEntryCollector()
+	ts.AddCleanup(collector.close)
 
-	go handleConnection(client, queue)
+	go handleConnection(client, collector)
 
-	return server, queue
+	return server, collector
 }
 
 func writeJSONLine(ts *TestSuite, v interface{}, writer io.Writer) {
@@ -26,19 +53,19 @@ func writeJSONLine(ts *TestSuite, v interface{}, writer io.Writer) {
 }
 
 func (ts *TestSuite) TestHandleRequest() {
-	server, queue := setupHander(ts)
+	server, collector := setupHander(ts)
 
 	req := dummyRequest()
 	writeJSONLine(ts, req, server)
 
-	ts.Equal(req, <-queue.Receive())
+	ts.Equal(req, <-collector.requests)
 }
 
 func (ts *TestSuite) TestHandleResponse() {
-	server, queue := setupHander(ts)
+	server, collector := setupHander(ts)
 
 	res := dummyResponse()
 	writeJSONLine(ts, res, server)
 
-	ts.Equal(res, <-queue.Receive())
+	ts.Equal(res, <-collector.responses)
 }
