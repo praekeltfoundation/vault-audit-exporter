@@ -28,15 +28,18 @@ func (col *auditEntryCollector) HandleResponse(res *audit.AuditResponseEntry) {
 	col.responses = append(col.responses, res)
 }
 
-func writeJSONLine(ts *TestSuite, v interface{}, writer io.Writer) {
-	b, _ := ts.WithoutError(json.Marshal(v)).([]byte)
-
-	ts.WithoutError(writer.Write(b))
-	ts.WithoutError(writer.Write([]byte("\n")))
+func writeJSONLine(v interface{}, writer io.Writer) {
+	b, _ := json.Marshal(v)
+	writeLine(b, writer)
 }
 
-func writeLine(ts *TestSuite, s string, writer io.Writer) {
-	ts.WithoutError(writer.Write([]byte(s + "\n")))
+func writeStringLine(s string, writer io.Writer) {
+	writeLine([]byte(s), writer)
+}
+
+func writeLine(b []byte, writer io.Writer) {
+	_, _ = writer.Write(b)
+	_, _ = writer.Write([]byte{'\n'})
 }
 
 func (ts *TestSuite) TestHandleRequest() {
@@ -44,8 +47,8 @@ func (ts *TestSuite) TestHandleRequest() {
 
 	req := dummyRequest()
 	go func() {
-		writeJSONLine(ts, req, server)
-		server.Close()
+		defer server.Close()
+		writeJSONLine(req, server)
 	}()
 
 	collector := newAuditEntryCollector()
@@ -60,8 +63,8 @@ func (ts *TestSuite) TestHandleResponse() {
 
 	res := dummyResponse()
 	go func() {
-		writeJSONLine(ts, res, server)
-		server.Close()
+		defer server.Close()
+		writeJSONLine(res, server)
 	}()
 
 	collector := newAuditEntryCollector()
@@ -77,10 +80,10 @@ func (ts *TestSuite) TestUnknownTypeIgnored() {
 	req := dummyRequest()
 	res := dummyResponse()
 	go func() {
-		writeJSONLine(ts, req, server)
-		writeLine(ts, "{\"type\": \"foo\"}", server)
-		writeJSONLine(ts, res, server)
-		server.Close()
+		defer server.Close()
+		writeJSONLine(req, server)
+		writeStringLine("{\"type\": \"foo\"}", server)
+		writeJSONLine(res, server)
 	}()
 
 	collector := newAuditEntryCollector()
@@ -97,7 +100,7 @@ func (ts *TestSuite) TestUnknownJSON() {
 	defer server.Close()
 
 	go func() {
-		writeLine(ts, "{\"foo\": \"bar\"}", server)
+		writeStringLine("{\"foo\": \"bar\"}", server)
 	}()
 
 	collector := newAuditEntryCollector()
@@ -112,7 +115,7 @@ func (ts *TestSuite) TestInvalidJSON() {
 	defer server.Close()
 
 	go func() {
-		writeLine(ts, "baz", server)
+		writeStringLine("baz", server)
 	}()
 
 	collector := newAuditEntryCollector()
