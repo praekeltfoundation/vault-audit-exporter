@@ -64,7 +64,7 @@ func handleConnection(conn net.Conn, handler Handler) {
 		log.Debug("Line received")
 
 		entryType, err := getEntryType(lineBytes)
-		if err != nil {
+		if err != nil || entryType == "" {
 			log.WithFields(log.Fields{"line": scanner.Text()}).Error("Unable to determine audit entry type")
 			return
 		}
@@ -80,6 +80,10 @@ func handleConnection(conn net.Conn, handler Handler) {
 		default:
 			log.WithFields(log.Fields{"type": entryType}).Warn("Received unknown audit entry type")
 		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		log.Warn("Error scanning line", err)
 	}
 }
 
