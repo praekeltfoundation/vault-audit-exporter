@@ -6,6 +6,7 @@ import (
 	"io"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/hashicorp/vault/audit"
 	"github.com/stretchr/testify/suite"
@@ -169,8 +170,20 @@ func (ts *ServerTests) TestListenAndServe() {
 		_ = ListenAndServe(addr, queue)
 	}()
 
-	// Dial into the server
-	conn, _ := ts.WithoutError(net.Dial("tcp", addr)).(net.Conn)
+	// Dial into the server - try a few times because we don't know when listening
+	// has started
+	var (
+		conn net.Conn
+		err  error
+	)
+	for i := 0; i < 5; i++ {
+		conn, err = net.Dial("tcp", addr)
+		if err == nil {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	ts.Require().NoError(err)
 
 	// Send some entries
 	req := dummyRequest()
