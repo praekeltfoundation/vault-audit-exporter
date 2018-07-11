@@ -2,6 +2,7 @@ package auditexporter
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net"
 	"testing"
@@ -9,6 +10,10 @@ import (
 	"github.com/hashicorp/vault/audit"
 	"github.com/stretchr/testify/suite"
 )
+
+// ListenAndServe doesn't allow us to fetch the port of the listener, so we have
+// to use a fixed one.
+const TestPort = 12345
 
 // See helper_for_test.go for common infrastructure and tools.
 
@@ -149,6 +154,36 @@ func (ts *ServerTests) TestInvalidJSON() {
 
 	ts.Empty(collector.requests)
 	ts.Empty(collector.responses)
+}
+
+func (ts *ServerTests) TestListenAndServe() {
+	addr := fmt.Sprintf("127.0.0.1:%d", TestPort)
+
+	// We have to use the queue here because handling happens in a separate
+	// goroutine
+	queue := NewAuditEntryQueue()
+	ts.AddCleanup(queue.Close)
+
+	// Start serving
+	go func() {
+		_ = ListenAndServe(addr, queue)
+	}()
+
+	// Dial into the server
+	conn, _ := ts.WithoutError(net.Dial("tcp", addr)).(net.Conn)
+
+	// Send some entries
+	req := dummyRequest()
+	res := dummyResponse()
+	go func() {
+		defer conn.Close()
+		ts.writeJSONLine(conn, req)
+		ts.writeJSONLine(conn, res)
+	}()
+
+	// Ensure they are received in the queue
+	ts.Equal(req, <-queue.Receive())
+	ts.Equal(res, <-queue.Receive())
 }
 
 func (ts *ServerTests) TestServe() {
