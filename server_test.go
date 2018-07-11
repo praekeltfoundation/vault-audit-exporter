@@ -124,6 +124,10 @@ func (ts *ServerTests) TestUnknownJSON() {
 	collector := newAuditEntryCollector()
 	handleConnection(client, collector)
 
+	// Ensure we can't write anymore because the connection was closed
+	_, err := server.Write([]byte("foobar\n"))
+	ts.Error(err)
+
 	ts.Empty(collector.requests)
 	ts.Empty(collector.responses)
 }
@@ -138,6 +142,10 @@ func (ts *ServerTests) TestInvalidJSON() {
 
 	collector := newAuditEntryCollector()
 	handleConnection(client, collector)
+
+	// Ensure we can't write anymore because the connection was closed
+	_, err := server.Write([]byte("foobar\n"))
+	ts.Error(err)
 
 	ts.Empty(collector.requests)
 	ts.Empty(collector.responses)
