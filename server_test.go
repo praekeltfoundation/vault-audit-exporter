@@ -267,6 +267,11 @@ func (ts *ServerTests) TestListenAndServe() {
 	wg.Wait()
 }
 
+func (ts *ServerTests) TestListenAndServeInvalidAddr() {
+	err := ListenAndServe("127.0.0.1:123456", newAuditEntryCollector())
+	ts.EqualError(err, "listen tcp: address 123456: invalid port")
+}
+
 func (ts *ServerTests) TestServe() {
 	listener, _ := ts.WithoutError(net.Listen("tcp", "127.0.0.1:0")).(net.Listener)
 	ts.AddCleanup(func() { _ = listener.Close() })
