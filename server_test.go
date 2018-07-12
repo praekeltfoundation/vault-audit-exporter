@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -48,13 +49,14 @@ func (ts *ServerTests) write(writer io.Writer, bytes ...[]byte) {
 
 // In some of the tests it's necessary to wait for a goroutine to finish before
 // the tests end in order to avoid a race condition in the test suite.
-func waitableGoroutine(f func()) <-chan struct{} {
-	done := make(chan struct{})
+func waitableGoroutine(f func()) *sync.WaitGroup {
+	var wg sync.WaitGroup
+	wg.Add(1)
 	go func() {
-		defer func() { done <- struct{}{} }()
+		defer wg.Done()
 		f()
 	}()
-	return done
+	return &wg
 }
 
 type auditEntryCollector struct {
@@ -137,7 +139,7 @@ func (ts *ServerTests) TestUnknownJSON() {
 	// The error in the server that results in the connection closing happens
 	// before the error is checked in ts.writeStringLine(), so it's necessary to
 	// check that this goroutine completes before the end of the test.
-	done := waitableGoroutine(func() {
+	wg := waitableGoroutine(func() {
 		ts.writeStringLine(server, "{\"foo\": \"bar\"}")
 	})
 
@@ -151,7 +153,7 @@ func (ts *ServerTests) TestUnknownJSON() {
 	ts.Empty(collector.requests)
 	ts.Empty(collector.responses)
 
-	<-done
+	wg.Wait()
 }
 
 func (ts *ServerTests) TestInvalidJSON() {
@@ -161,7 +163,7 @@ func (ts *ServerTests) TestInvalidJSON() {
 	// The error in the server that results in the connection closing happens
 	// before the error is checked in ts.writeStringLine(), so it's necessary to
 	// check that this goroutine completes before the end of the test.
-	done := waitableGoroutine(func() {
+	wg := waitableGoroutine(func() {
 		ts.writeStringLine(server, "baz")
 	})
 
@@ -175,7 +177,7 @@ func (ts *ServerTests) TestInvalidJSON() {
 	ts.Empty(collector.requests)
 	ts.Empty(collector.responses)
 
-	<-done
+	wg.Wait()
 }
 
 func (ts *ServerTests) TestListenAndServe() {
@@ -212,7 +214,7 @@ func (ts *ServerTests) TestListenAndServe() {
 	// The responses from the server that may be received from the queue before
 	// the error is checked in ts.writeJSONLine(), so it's necessary to check
 	// that this goroutine completes before the end of the test.
-	done := waitableGoroutine(func() {
+	wg := waitableGoroutine(func() {
 		defer conn.Close()
 		ts.writeJSONLine(conn, req)
 		ts.writeJSONLine(conn, res)
@@ -222,7 +224,7 @@ func (ts *ServerTests) TestListenAndServe() {
 	ts.Equal(req, <-queue.Receive())
 	ts.Equal(res, <-queue.Receive())
 
-	<-done
+	wg.Wait()
 }
 
 func (ts *ServerTests) TestServe() {
@@ -249,7 +251,7 @@ func (ts *ServerTests) TestServe() {
 	// The responses from the server that may be received from the queue before
 	// the error is checked in ts.writeJSONLine(), so it's necessary to check
 	// that this goroutine completes before the end of the test.
-	done := waitableGoroutine(func() {
+	wg := waitableGoroutine(func() {
 		defer conn.Close()
 		ts.writeJSONLine(conn, req)
 		ts.writeJSONLine(conn, res)
@@ -259,5 +261,5 @@ func (ts *ServerTests) TestServe() {
 	ts.Equal(req, <-queue.Receive())
 	ts.Equal(res, <-queue.Receive())
 
-	<-done
+	wg.Wait()
 }
