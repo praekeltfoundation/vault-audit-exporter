@@ -111,6 +111,46 @@ func (ts *ServerTests) TestHandleResponse() {
 	ts.Equal(res, collector.responses[0])
 }
 
+func (ts *ServerTests) TestInvalidRequest() {
+	server, client := net.Pipe()
+
+	req := dummyRequest()
+	go func() {
+		defer server.Close()
+		// The 'time' field should have type string.
+		ts.writeStringLine(server, "{\"type\": \"request\", \"time\": false}")
+
+		// We can still send requests after an invalid one is ignored
+		ts.writeJSONLine(server, req)
+	}()
+
+	collector := newAuditEntryCollector()
+	handleConnection(client, collector)
+
+	ts.Len(collector.requests, 1)
+	ts.Equal(req, collector.requests[0])
+}
+
+func (ts *ServerTests) TestInvalidResponse() {
+	server, client := net.Pipe()
+
+	res := dummyResponse()
+	go func() {
+		defer server.Close()
+		// The 'time' field should have type string.
+		ts.writeStringLine(server, "{\"type\": \"response\", \"time\": false}")
+
+		// We can still send responses after an invalid one is ignored
+		ts.writeJSONLine(server, res)
+	}()
+
+	collector := newAuditEntryCollector()
+	handleConnection(client, collector)
+
+	ts.Len(collector.responses, 1)
+	ts.Equal(res, collector.responses[0])
+}
+
 func (ts *ServerTests) TestUnknownTypeIgnored() {
 	server, client := net.Pipe()
 
