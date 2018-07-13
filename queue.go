@@ -16,19 +16,19 @@ func NewAuditEntryQueue() *AuditEntryQueue {
 }
 
 // Close closes the underlying channels
-func (q AuditEntryQueue) Close() {
+func (q *AuditEntryQueue) Close() {
 	close(q.channel)
 }
 
 // Receive returns a channel to receive AuditEntry instances from.
-func (q AuditEntryQueue) Receive() <-chan interface{} {
+func (q *AuditEntryQueue) Receive() <-chan interface{} {
 	return q.channel
 }
 
-func (q AuditEntryQueue) sendRequest(req *audit.AuditRequestEntry) {
+func (q *AuditEntryQueue) HandleRequest(req *audit.AuditRequestEntry) {
 	q.channel <- req
 }
 
-func (q AuditEntryQueue) sendResponse(res *audit.AuditResponseEntry) {
+func (q *AuditEntryQueue) HandleResponse(res *audit.AuditResponseEntry) {
 	q.channel <- res
 }

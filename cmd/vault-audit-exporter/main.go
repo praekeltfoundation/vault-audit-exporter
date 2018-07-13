@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"net"
 
 	"github.com/hashicorp/vault/audit"
 	"github.com/praekeltfoundation/vault-audit-exporter"
@@ -40,22 +41,17 @@ func main() {
 		return
 	}
 
-	listener, err := auditexporter.Listen(network, address)
+	listener, err := net.Listen(network, address)
 	if err != nil {
 		log.Fatal("Error listening for connections", err)
 	}
-	defer func() {
-		err := listener.Close()
-		if err != nil {
-			log.Warn("Error closing listener", err)
-		}
-	}()
+	log.WithFields(log.Fields{"addr": listener.Addr()}).Info("Listening...")
 
 	queue := auditexporter.NewAuditEntryQueue()
 	defer queue.Close()
 	go logAuditEntries(queue)
 
-	if err := auditexporter.AcceptConnections(listener, queue); err != nil {
+	if err := auditexporter.Serve(listener, queue); err != nil {
 		log.Fatal("Error accepting connections", err)
 	}
 }

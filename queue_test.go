@@ -6,7 +6,7 @@ func (ts *TestSuite) TestSendRequest() {
 
 	req := dummyRequest()
 	go func() {
-		q.sendRequest(req)
+		q.HandleRequest(req)
 	}()
 
 	ts.Equal(req, <-q.Receive())
@@ -18,7 +18,7 @@ func (ts *TestSuite) TestSendResponse() {
 
 	res := dummyResponse()
 	go func() {
-		q.sendResponse(res)
+		q.HandleResponse(res)
 	}()
 
 	ts.Equal(res, <-q.Receive())
@@ -30,8 +30,8 @@ func (ts *TestSuite) TestClose() {
 	req := dummyRequest()
 	res := dummyResponse()
 	go func() {
-		q.sendRequest(req)
-		q.sendResponse(res)
+		q.HandleRequest(req)
+		q.HandleResponse(res)
 		q.Close()
 	}()
 
