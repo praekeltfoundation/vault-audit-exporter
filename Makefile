@@ -38,8 +38,11 @@ build:
 dep:
 	dep ensure -v
 
-dep-ci: dep
-	@git diff --exit-code -- Gopkg.lock
+# dep check will ensure the lockfile is not out-of-sync. Don't check the vendor
+# directory because we haven't populated it yet.
+dep-ci:
+	dep check -skip-vendor
+	dep ensure -v
 
 clean:
 	@test ! -e bin/${BIN_NAME} || rm bin/${BIN_NAME}
