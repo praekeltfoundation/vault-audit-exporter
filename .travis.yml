@@ -6,7 +6,7 @@ go:
 
 env:
   global:
-    - DEP_VERSION="v0.4.1"
+    - DEP_VERSION="v0.5.0"
     - GOLANGCI_LINT_VERSION="v1.9.1"
 
 before_install:
@@ -23,7 +23,6 @@ script:
   - make cover
   # Don't lint on go master -- the build is slow enough already.
   - go version | grep 'devel' || make lint
-  - make fmt-ci
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)

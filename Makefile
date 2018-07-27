@@ -20,8 +20,6 @@ help:
 	@echo '    make cover           Run tests and collect coverage data.'
 	@echo '    make dep             Run dep ensure.'
 	@echo '    make dep-ci          Run dep ensure and check for any changes.'
-	@echo '    make fmt             Run gofmt on all project packages.'
-	@echo '    make fmt-ci          Run gofmt and check for any changes.'
 	@echo '    make lint            Run golangci-lint.'
 	@echo '    make test            Run tests on a compiled project.'
 	@echo
@@ -38,8 +36,11 @@ build:
 dep:
 	dep ensure -v
 
-dep-ci: dep
-	@git diff --exit-code -- Gopkg.lock
+# dep check will ensure the lockfile is not out-of-sync. Don't check the vendor
+# directory because we haven't populated it yet.
+dep-ci:
+	dep check -skip-vendor
+	dep ensure -v
 
 clean:
 	@test ! -e bin/${BIN_NAME} || rm bin/${BIN_NAME}
@@ -52,12 +53,5 @@ cover:
 
 lint:
 	golangci-lint run --enable-all --tests ./...
-
-fmt:
-	go fmt ./...
-
-fmt-ci: fmt
-	@find $(shell go list -f '{{.Dir}}' ./...) -depth 1 -name '*.go' \
-		| xargs git diff --exit-code --
 
 .PHONY: all build clean cover default dep dep-ci fmt fmt-ci help lint test
