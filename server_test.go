@@ -230,7 +230,7 @@ func (ts *ServerTests) TestListenAndServe() {
 
 	// Start serving
 	go func() {
-		_ = ListenAndServe(addr, queue)
+		_ = ListenAndServe(addr, queue) // #nosec G104
 	}()
 
 	// Dial into the server - try a few times because we don't know when listening
@@ -274,7 +274,7 @@ func (ts *ServerTests) TestListenAndServeInvalidAddr() {
 
 func (ts *ServerTests) TestServe() {
 	listener, _ := ts.WithoutError(net.Listen("tcp", "127.0.0.1:0")).(net.Listener)
-	ts.AddCleanup(func() { _ = listener.Close() })
+	ts.AddCleanup(func() { _ = listener.Close() }) // #nosec G104
 
 	// We have to use the queue here because handling happens in a separate
 	// goroutine
@@ -283,7 +283,7 @@ func (ts *ServerTests) TestServe() {
 
 	// Start serving
 	go func() {
-		_ = Serve(listener, queue)
+		_ = Serve(listener, queue) // #nosec G104
 	}()
 
 	// Dial into the server
